@@ -1,0 +1,10 @@
+allprojects {
+
+    group 'me.zhanghai.android.bytecoder'
+    version '1.0.0-SNAPSHOT'
+
+    repositories {
+        google()
+        jcenter()
+    }
+}

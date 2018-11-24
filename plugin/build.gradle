@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = 1.8
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'com.android.tools.build:gradle:3.2.1'
+    implementation 'com.android.tools.build:gradle-api:3.2.1'
+}
