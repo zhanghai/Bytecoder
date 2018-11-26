@@ -345,6 +345,12 @@ class BytecoderClassTranformer {
                             + method);
                 }
                 super.visitEnd();
+                return;
+            }
+
+            if (annotatedClassType == null) {
+                throw new IllegalArgumentException("Method must have either classConstant or"
+                        + " className in its @Invoke*");
             }
 
             if ((access & Opcodes.ACC_STATIC) == 0) {
@@ -502,15 +508,31 @@ class BytecoderClassTranformer {
             @Override
             public void visit(String name, Object value) {
                 switch (name) {
-                    case "className":
-                        annotatedClassType = Type.getType(getDescriptor((String) value));
+                    case "classConstant": {
+                        Type classType = (Type) value;
+                        if (!classType.equals(Type.VOID_TYPE)) {
+                            if (annotatedClassType != null) {
+                                throw new IllegalArgumentException("Method must not have both" +
+                                        " classConstant and className in its @Invoke*");
+                            }
+                            annotatedClassType = classType;
+                        }
                         break;
+                    }
+                    case "className": {
+                        String className = (String) value;
+                        if (!className.equals("")) {
+                            if (annotatedClassType != null) {
+                                throw new IllegalArgumentException("Method must not have both" +
+                                        " classConstant and className in its @Invoke*");
+                            }
+                            annotatedClassType = Type.getType(getDescriptor(className));
+                        }
+                        break;
+                    }
                     case "methodName":
                         annotatedMethodName = (String) value;
                         break;
-                    default:
-                        throw new IllegalArgumentException("Unknown name " + name + " in @Invoke*: "
-                                + method);
                 }
             }
         }
@@ -527,9 +549,6 @@ class BytecoderClassTranformer {
                     case "value":
                         annotatedReturnType = Type.getType(getDescriptor((String) value));
                         break;
-                    default:
-                        throw new IllegalArgumentException("Unknown name " + name + " in"
-                                + " @TypeName: " + method);
                 }
             }
         }
@@ -551,9 +570,6 @@ class BytecoderClassTranformer {
                         annotatedParameterTypes[index] = Type.getType(getDescriptor((String)
                                 value));
                         break;
-                    default:
-                        throw new IllegalArgumentException("Unknown name " + name + " in"
-                                + " @TypeName: " + method);
                 }
             }
         }

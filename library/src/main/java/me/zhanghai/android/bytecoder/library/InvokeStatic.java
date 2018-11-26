@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 @Target({ ElementType.METHOD })
 public @interface InvokeStatic {
-    String className();
+    Class<?> classConstant() default void.class;
+    String className() default "";
     String methodName();
 }

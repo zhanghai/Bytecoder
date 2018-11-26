@@ -10,5 +10,6 @@ import java.lang.annotation.Target;
 
 @Target({ ElementType.METHOD })
 public @interface InvokeConstructor {
-    String className();
+    Class<?> classConstant() default void.class;
+    String className() default "";
 }

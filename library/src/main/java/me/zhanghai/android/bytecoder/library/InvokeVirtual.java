@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 @Target({ ElementType.METHOD })
 public @interface InvokeVirtual {
-    String className();
+    Class<?> classConstant() default void.class;
+    String className() default "";
     String methodName();
 }
