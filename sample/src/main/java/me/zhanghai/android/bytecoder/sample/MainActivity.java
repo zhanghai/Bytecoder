@@ -6,9 +6,7 @@
 package me.zhanghai.android.bytecoder.sample;
 
 import android.app.Activity;
-import android.content.res.Resources;
 import android.os.Bundle;
-import android.text.format.Formatter;
 import android.widget.Toast;
 import me.zhanghai.android.bytecoder.library.InvokeStatic;
 import me.zhanghai.android.bytecoder.library.TypeName;
@@ -19,15 +17,14 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Toast.makeText(this, Formatter_formatBytes(getResources(), 0, 0).toString(),
-                Toast.LENGTH_LONG)
-                .show();
+        Object activityThread = ActivityThread_currentActivityThread();
+        String text = "ActivityThread.currentActivityThread(): " + activityThread.toString();
+        Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
-    @InvokeStatic(classConstant = Formatter.class, methodName = "formatBytes")
-    @TypeName("android.text.format.Formatter$BytesResult")
-    public static Object Formatter_formatBytes(Resources res, long sizeBytes, int flags)
-            throws LinkageError {
+    @InvokeStatic(className = "android.app.ActivityThread", methodName = "currentActivityThread")
+    @TypeName("android.app.ActivityThread")
+    public static Object ActivityThread_currentActivityThread() throws LinkageError {
         return null;
     }
 }
