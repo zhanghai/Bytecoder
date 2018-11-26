@@ -460,6 +460,7 @@ class BytecoderClassTranformer {
                     }
                     break;
             }
+
             switch (annotatedOpcode) {
                 case Opcodes.GETFIELD:
                 case Opcodes.GETSTATIC:
