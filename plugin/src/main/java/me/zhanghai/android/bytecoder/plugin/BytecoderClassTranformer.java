@@ -455,8 +455,8 @@ class BytecoderClassTranformer {
                                 + " target class as its first parameter: " + method);
                     }
                     if (!parameterTypesWithAnnotated[0].equals(annotatedClassType)) {
-                        throw new IllegalArgumentException("Method must declare the type of its"
-                                + " first parameter to be the same as the target class: " + method);
+                        throw new IllegalArgumentException("Method must declare its first parameter"
+                                + " to be the same type as the target class: " + method);
                     }
                     break;
             }
@@ -472,6 +472,12 @@ class BytecoderClassTranformer {
                 case Opcodes.PUTSTATIC:
                     if (!returnTypeWithAnnotated.equals(Type.VOID_TYPE)) {
                         throw new IllegalArgumentException("Method must return void: " + method);
+                    }
+                    break;
+                case Opcodes.INVOKESPECIAL:
+                    if (!returnTypeWithAnnotated.equals(annotatedClassType)) {
+                        throw new IllegalArgumentException("Method must return the same type as the"
+                                + " target class: " + method);
                     }
                     break;
             }
