@@ -67,6 +67,14 @@ class BytecoderClassTranformer {
 
         private static final String LIBRARY_CLASS_NAME_PREFIX =
                 "me.zhanghai.android.bytecoder.library.";
+        private static final Type TYPE_GET_FIELD = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "GetField"));
+        private static final Type TYPE_GET_STATIC = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "GetStatic"));
+        private static final Type TYPE_PUT_FIELD = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "PutField"));
+        private static final Type TYPE_PUT_STATIC = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "PutStatic"));
         private static final Type TYPE_INVOKE_CONSTRUCTOR = Type.getType(getDescriptor(
                 LIBRARY_CLASS_NAME_PREFIX + "InvokeConstructor"));
         private static final Type TYPE_INVOKE_INTERFACE = Type.getType(getDescriptor(
@@ -87,6 +95,7 @@ class BytecoderClassTranformer {
         private int annotatedOpcode;
         private Type annotatedClassType;
         private String annotatedMethodName;
+        private String annotatedFieldName;
         private Type[] annotatedParameterTypes;
         private Type annotatedReturnType;
 
@@ -105,34 +114,62 @@ class BytecoderClassTranformer {
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             Type annotationType = Type.getType(desc);
-            if (annotationType.equals(TYPE_INVOKE_CONSTRUCTOR)) {
-                if (hasTarget()) {
-                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+            if (annotationType.equals(TYPE_GET_FIELD)) {
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.GETFIELD;
+                return new BytecoderAnnotationVisitor();
+            } else if (annotationType.equals(TYPE_GET_STATIC)) {
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.GETSTATIC;
+                return new BytecoderAnnotationVisitor();
+            } if (annotationType.equals(TYPE_PUT_FIELD)) {
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.PUTFIELD;
+                return new BytecoderAnnotationVisitor();
+            } if (annotationType.equals(TYPE_PUT_STATIC)) {
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.PUTSTATIC;
+                return new BytecoderAnnotationVisitor();
+            } if (annotationType.equals(TYPE_INVOKE_CONSTRUCTOR)) {
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
                             + ": " + method);
                 }
                 annotatedOpcode = Opcodes.INVOKESPECIAL;
-                return new InvokeAnnotationVisitor();
+                return new BytecoderAnnotationVisitor();
             } else if (annotationType.equals(TYPE_INVOKE_INTERFACE)) {
-                if (hasTarget()) {
-                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
                             + ": " + method);
                 }
                 annotatedOpcode = Opcodes.INVOKEINTERFACE;
-                return new InvokeAnnotationVisitor();
+                return new BytecoderAnnotationVisitor();
             } else if (annotationType.equals(TYPE_INVOKE_STATIC)) {
-                if (hasTarget()) {
-                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
                             + ": " + method);
                 }
                 annotatedOpcode = Opcodes.INVOKESTATIC;
-                return new InvokeAnnotationVisitor();
+                return new BytecoderAnnotationVisitor();
             } else if (annotationType.equals(TYPE_INVOKE_VIRTUAL)) {
-                if (hasTarget()) {
-                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                if (hasBytecoderAnnotation()) {
+                    throw new IllegalArgumentException("Method has a duplicate annotation " + desc
                             + ": " + method);
                 }
                 annotatedOpcode = Opcodes.INVOKEVIRTUAL;
-                return new InvokeAnnotationVisitor();
+                return new BytecoderAnnotationVisitor();
             } else if (annotationType.equals(TYPE_TYPE_NAME)) {
                 return new ReturnTypeNameAnnotationVisitor();
             } else {
@@ -156,49 +193,49 @@ class BytecoderClassTranformer {
 
         @Override
         public void visitCode() {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitCode();
             }
         }
 
         @Override
         public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitFrame(type, nLocal, local, nStack, stack);
             }
         }
 
         @Override
         public void visitInsn(int opcode) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitInsn(opcode);
             }
         }
 
         @Override
         public void visitIntInsn(int opcode, int operand) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitIntInsn(opcode, operand);
             }
         }
 
         @Override
         public void visitVarInsn(int opcode, int var) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitVarInsn(opcode, var);
             }
         }
 
         @Override
         public void visitTypeInsn(int opcode, String type) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitTypeInsn(opcode, type);
             }
         }
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitFieldInsn(opcode, owner, name, desc);
             }
         }
@@ -212,7 +249,7 @@ class BytecoderClassTranformer {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                                     boolean itf) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
             }
         }
@@ -220,56 +257,56 @@ class BytecoderClassTranformer {
         @Override
         public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
                                            Object... bsmArgs) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
             }
         }
 
         @Override
         public void visitJumpInsn(int opcode, Label label) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitJumpInsn(opcode, label);
             }
         }
 
         @Override
         public void visitLabel(Label label) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitLabel(label);
             }
         }
 
         @Override
         public void visitLdcInsn(Object cst) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitLdcInsn(cst);
             }
         }
 
         @Override
         public void visitIincInsn(int var, int increment) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitIincInsn(var, increment);
             }
         }
 
         @Override
         public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitTableSwitchInsn(min, max, dflt, labels);
             }
         }
 
         @Override
         public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitLookupSwitchInsn(dflt, keys, labels);
             }
         }
 
         @Override
         public void visitMultiANewArrayInsn(String desc, int dims) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitMultiANewArrayInsn(desc, dims);
             }
         }
@@ -277,7 +314,7 @@ class BytecoderClassTranformer {
         @Override
         public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String desc,
                                                      boolean visible) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 return super.visitInsnAnnotation(typeRef, typePath, desc, visible);
             }
             return null;
@@ -285,7 +322,7 @@ class BytecoderClassTranformer {
 
         @Override
         public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitTryCatchBlock(start, end, handler, type);
             }
         }
@@ -293,7 +330,7 @@ class BytecoderClassTranformer {
         @Override
         public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath,
                                                          String desc, boolean visible) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 return super.visitTryCatchAnnotation(typeRef, typePath, desc, visible);
             }
             return null;
@@ -302,7 +339,7 @@ class BytecoderClassTranformer {
         @Override
         public void visitLocalVariable(String name, String desc, String signature, Label start,
                                        Label end, int index) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitLocalVariable(name, desc, signature, start, end, index);
             }
         }
@@ -312,7 +349,7 @@ class BytecoderClassTranformer {
                                                               Label[] start, Label[] end,
                                                               int[] index, String desc,
                                                               boolean visible) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 return super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index,
                         desc, visible);
             }
@@ -321,28 +358,28 @@ class BytecoderClassTranformer {
 
         @Override
         public void visitLineNumber(int line, Label start) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitLineNumber(line, start);
             }
         }
 
         @Override
         public void visitMaxs(int maxStack, int maxLocals) {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 super.visitMaxs(maxStack, maxLocals);
             }
         }
 
         @Override
         public void visitEnd() {
-            if (!hasTarget()) {
+            if (!hasBytecoderAnnotation()) {
                 if (annotatedParameterTypes != null) {
                     throw new IllegalArgumentException("Method has a parameter with @TypeName but"
-                            + " missing @Invoke*: " + method);
+                            + " missing annotation: " + method);
                 }
                 if (annotatedReturnType != null) {
-                    throw new IllegalArgumentException("Method has @TypeName but missing @Invoke*: "
-                            + method);
+                    throw new IllegalArgumentException("Method has @TypeName but missing"
+                            + " annotation: " + method);
                 }
                 super.visitEnd();
                 return;
@@ -350,7 +387,7 @@ class BytecoderClassTranformer {
 
             if (annotatedClassType == null) {
                 throw new IllegalArgumentException("Method must have either classConstant or"
-                        + " className in its @Invoke*");
+                        + " className in its annotation");
             }
 
             if ((access & Opcodes.ACC_STATIC) == 0) {
@@ -371,27 +408,57 @@ class BytecoderClassTranformer {
                         + method);
             }
 
+            Type[] parameterTypesWithAnnotated = new Type[parameterTypes.length];
+            for (int i = 0; i < parameterTypes.length; ++i) {
+                parameterTypesWithAnnotated[i] = annotatedParameterTypes != null
+                        && annotatedParameterTypes[i] != null ? annotatedParameterTypes[i]
+                        : parameterTypes[i];
+            }
+
+            Type returnTypeWithAnnotated = annotatedReturnType != null ? annotatedReturnType
+                    : returnType;
+
             switch (annotatedOpcode) {
+                case Opcodes.GETFIELD:
+                    if (parameterTypesWithAnnotated.length != 1) {
+                        throw new IllegalArgumentException("Method must take an instance of the"
+                                + " target class as its only parameter: " + method);
+                    }
+                    break;
+                case Opcodes.GETSTATIC:
+                    if (parameterTypesWithAnnotated.length != 0) {
+                        throw new IllegalArgumentException("Method must not take any parameter: "
+                                + method);
+                    }
+                    break;
+                case Opcodes.PUTFIELD:
+                    if (parameterTypesWithAnnotated.length != 2) {
+                        throw new IllegalArgumentException("Method must only take an instance of"
+                                + " the target class as its first parameter and the new value as"
+                                + " its second parameter: " + method);
+                    }
+                    break;
+                case Opcodes.PUTSTATIC:
+                    if (parameterTypesWithAnnotated.length != 1) {
+                        throw new IllegalArgumentException("Method must take the new value as its"
+                                + " only parameter: " + method);
+                    }
+                    break;
+            }
+            switch (annotatedOpcode) {
+                case Opcodes.GETFIELD:
+                case Opcodes.PUTFIELD:
                 case Opcodes.INVOKEINTERFACE:
                 case Opcodes.INVOKEVIRTUAL:
-                    if (parameterTypes.length < 1) {
+                    if (parameterTypesWithAnnotated.length < 1) {
                         throw new IllegalArgumentException("Method must take an instance of the"
                                 + " target class as its first parameter: " + method);
                     }
-                    Type firstParameterType = annotatedParameterTypes != null
-                            && annotatedParameterTypes[0] != null ? annotatedParameterTypes[0]
-                            : parameterTypes[0];
-                    if (!firstParameterType.equals(annotatedClassType)) {
+                    if (!parameterTypesWithAnnotated[0].equals(annotatedClassType)) {
                         throw new IllegalArgumentException("Method must declare the type of its"
-                                + " first parameter the same as the target class: " + method);
+                                + " first parameter to be the same as the target class: " + method);
                     }
                     break;
-                case Opcodes.INVOKESPECIAL:
-                case Opcodes.INVOKESTATIC:
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown opcode " + annotatedOpcode + ": "
-                            + method);
             }
 
             if (!throwsLinkageError) {
@@ -419,42 +486,71 @@ class BytecoderClassTranformer {
 
             String targetClassInternalName = annotatedClassType.getInternalName();
 
-            int targetParameterStartIndex;
             switch (annotatedOpcode) {
-                case Opcodes.INVOKEINTERFACE:
-                case Opcodes.INVOKEVIRTUAL:
-                    targetParameterStartIndex = 1;
+                case Opcodes.GETFIELD:
+                case Opcodes.GETSTATIC:
+                case Opcodes.PUTFIELD:
+                case Opcodes.PUTSTATIC: {
+
+                    Type targetFieldType;
+                    switch (annotatedOpcode) {
+                        case Opcodes.GETFIELD:
+                        case Opcodes.GETSTATIC:
+                            targetFieldType = returnTypeWithAnnotated;
+                            break;
+                        case Opcodes.PUTFIELD:
+                            targetFieldType = parameterTypesWithAnnotated[1];
+                            break;
+                        case Opcodes.PUTSTATIC:
+                            targetFieldType = parameterTypesWithAnnotated[0];
+                            break;
+                        default:
+                            throw new IllegalArgumentException();
+                    }
+                    String targetFieldDescriptor = targetFieldType.getDescriptor();
+
+                    mv.visitFieldInsn(annotatedOpcode, targetClassInternalName, annotatedFieldName,
+                            targetFieldDescriptor);
+
                     break;
+                }
+                case Opcodes.INVOKEINTERFACE:
                 case Opcodes.INVOKESPECIAL:
                 case Opcodes.INVOKESTATIC:
-                    targetParameterStartIndex = 0;
+                case Opcodes.INVOKEVIRTUAL: {
+
+                    Type targetReturnType = annotatedOpcode == Opcodes.INVOKESPECIAL ?
+                            Type.VOID_TYPE : returnTypeWithAnnotated;
+                    Type[] targetParameterTypes;
+                    switch (annotatedOpcode) {
+                        case Opcodes.INVOKEINTERFACE:
+                        case Opcodes.INVOKEVIRTUAL:
+                            targetParameterTypes = new Type[parameterTypesWithAnnotated.length - 1];
+                            System.arraycopy(parameterTypesWithAnnotated, 1, targetParameterTypes,
+                                    0, targetParameterTypes.length);
+                            break;
+                        case Opcodes.INVOKESPECIAL:
+                        case Opcodes.INVOKESTATIC:
+                            targetParameterTypes = parameterTypesWithAnnotated;
+                            break;
+                        default:
+                            throw new IllegalArgumentException();
+                    }
+                    String targetMethodDescriptor = Type.getMethodDescriptor(targetReturnType,
+                            targetParameterTypes);
+
+                    boolean targetIsInterface = annotatedOpcode == Opcodes.INVOKEINTERFACE;
+
+                    mv.visitMethodInsn(annotatedOpcode, targetClassInternalName,
+                            annotatedMethodName, targetMethodDescriptor, targetIsInterface);
+
                     break;
-                default:
-                    throw new IllegalArgumentException("Unknown opcode " + annotatedOpcode + ": "
-                            + method);
+                }
             }
-            Type[] targetParameterTypes = new Type[parameterTypes.length
-                    - targetParameterStartIndex];
-            for (int i = 0; i < targetParameterTypes.length; ++i) {
-                int parameterIndex = targetParameterStartIndex + i;
-                boolean hasAnnotatedParameterType = annotatedParameterTypes != null
-                        && annotatedParameterTypes[parameterIndex] != null;
-                targetParameterTypes[i] = hasAnnotatedParameterType ?
-                        annotatedParameterTypes[parameterIndex] : parameterTypes[parameterIndex];
-            }
-            Type targetReturnType = annotatedOpcode == Opcodes.INVOKESPECIAL ? Type.VOID_TYPE
-                    : annotatedReturnType != null ? annotatedReturnType : returnType;
-            String targetMethodDescriptor = Type.getMethodDescriptor(targetReturnType,
-                    targetParameterTypes);
 
-            boolean targetIsInterface = annotatedOpcode == Opcodes.INVOKEINTERFACE;
-
-            mv.visitMethodInsn(annotatedOpcode, targetClassInternalName, annotatedMethodName,
-                    targetMethodDescriptor, targetIsInterface);
-
-            mv.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
-
-            if (!returnType.equals(Type.VOID_TYPE)) {
+            int returnOpcode = returnType.getOpcode(Opcodes.IRETURN);
+            mv.visitInsn(returnOpcode);
+            if (returnOpcode != Opcodes.RETURN) {
                 maxStack = Math.max(maxStack, 1);
             }
 
@@ -463,7 +559,7 @@ class BytecoderClassTranformer {
             mv.visitEnd();
         }
 
-        private boolean hasTarget() {
+        private boolean hasBytecoderAnnotation() {
             return annotatedOpcode != 0;
         }
 
@@ -499,9 +595,9 @@ class BytecoderClassTranformer {
             }
         }
 
-        private class InvokeAnnotationVisitor extends AnnotationVisitor {
+        private class BytecoderAnnotationVisitor extends AnnotationVisitor {
 
-            public InvokeAnnotationVisitor() {
+            public BytecoderAnnotationVisitor() {
                 super(Opcodes.ASM6);
             }
 
@@ -512,8 +608,9 @@ class BytecoderClassTranformer {
                         Type classType = (Type) value;
                         if (!classType.equals(Type.VOID_TYPE)) {
                             if (annotatedClassType != null) {
-                                throw new IllegalArgumentException("Method must not have both" +
-                                        " classConstant and className in its @Invoke*");
+                                throw new IllegalArgumentException("Method must not have both"
+                                        + " classConstant and className in its annotation: "
+                                        + method);
                             }
                             annotatedClassType = classType;
                         }
@@ -523,8 +620,9 @@ class BytecoderClassTranformer {
                         String className = (String) value;
                         if (!className.equals("")) {
                             if (annotatedClassType != null) {
-                                throw new IllegalArgumentException("Method must not have both" +
-                                        " classConstant and className in its @Invoke*");
+                                throw new IllegalArgumentException("Method must not have both"
+                                        + " classConstant and className in its annotation: "
+                                        + method);
                             }
                             annotatedClassType = Type.getType(getDescriptor(className));
                         }
@@ -532,6 +630,9 @@ class BytecoderClassTranformer {
                     }
                     case "methodName":
                         annotatedMethodName = (String) value;
+                        break;
+                    case "fieldName":
+                        annotatedFieldName = (String) value;
                         break;
                 }
             }
