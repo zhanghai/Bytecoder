@@ -541,6 +541,9 @@ class BytecoderClassTranformer {
                 case Opcodes.INVOKESTATIC:
                 case Opcodes.INVOKEVIRTUAL: {
 
+                    String targetMethodName = annotatedOpcode == Opcodes.INVOKESPECIAL ? "<init>"
+                            : annotatedMethodName;
+
                     Type targetReturnType = annotatedOpcode == Opcodes.INVOKESPECIAL ?
                             Type.VOID_TYPE : returnTypeWithAnnotated;
                     Type[] targetParameterTypes;
@@ -563,8 +566,8 @@ class BytecoderClassTranformer {
 
                     boolean targetIsInterface = annotatedOpcode == Opcodes.INVOKEINTERFACE;
 
-                    mv.visitMethodInsn(annotatedOpcode, targetClassInternalName,
-                            annotatedMethodName, targetMethodDescriptor, targetIsInterface);
+                    mv.visitMethodInsn(annotatedOpcode, targetClassInternalName, targetMethodName,
+                            targetMethodDescriptor, targetIsInterface);
 
                     break;
                 }
