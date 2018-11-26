@@ -460,6 +460,21 @@ class BytecoderClassTranformer {
                     }
                     break;
             }
+            switch (annotatedOpcode) {
+                case Opcodes.GETFIELD:
+                case Opcodes.GETSTATIC:
+                    if (returnTypeWithAnnotated.equals(Type.VOID_TYPE)) {
+                        throw new IllegalArgumentException("Method must return the same type as the"
+                                + " target field: " + method);
+                    }
+                    break;
+                case Opcodes.PUTFIELD:
+                case Opcodes.PUTSTATIC:
+                    if (!returnTypeWithAnnotated.equals(Type.VOID_TYPE)) {
+                        throw new IllegalArgumentException("Method must return void: " + method);
+                    }
+                    break;
+            }
 
             if (!throwsLinkageError) {
                 throw new IllegalArgumentException("Method must throw LinkageError: " + method);
