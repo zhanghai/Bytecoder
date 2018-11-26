@@ -92,6 +92,13 @@ class BytecoderClassTranformer {
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             switch (desc) {
+                case "Lme/zhanghai/android/bytecoder/library/InvokeConstructor;":
+                    if (hasTarget()) {
+                        throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                                + ": " + method);
+                    }
+                    annotatedOpcode = Opcodes.INVOKESPECIAL;
+                    return new InvokeAnnotationVisitor();
                 case "Lme/zhanghai/android/bytecoder/library/InvokeInterface;":
                     if (hasTarget()) {
                         throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
@@ -360,6 +367,7 @@ class BytecoderClassTranformer {
                                 + " first parameter the same as the target class: " + method);
                     }
                     break;
+                case Opcodes.INVOKESPECIAL:
                 case Opcodes.INVOKESTATIC:
                     break;
                 default:
@@ -373,22 +381,34 @@ class BytecoderClassTranformer {
 
             mv.visitCode();
 
+            int maxStack = 0;
+            int maxLocals;
+
+            if (annotatedOpcode == Opcodes.INVOKESPECIAL) {
+                mv.visitTypeInsn(Opcodes.NEW, annotatedClassType.getInternalName());
+                mv.visitInsn(Opcodes.DUP);
+                maxStack += 2;
+            }
+
             int localIndex = 0;
             for (Type parameterType : parameterTypes) {
                 mv.visitVarInsn(parameterType.getOpcode(Opcodes.ILOAD), localIndex);
                 localIndex += parameterType.getSize();
             }
+            maxStack += localIndex;
+            maxLocals = localIndex;
 
             String targetClassInternalName = annotatedClassType.getInternalName();
 
             int targetParameterStartIndex;
             switch (annotatedOpcode) {
                 case Opcodes.INVOKEINTERFACE:
-                case Opcodes.INVOKESTATIC:
-                    targetParameterStartIndex = 0;
-                    break;
                 case Opcodes.INVOKEVIRTUAL:
                     targetParameterStartIndex = 1;
+                    break;
+                case Opcodes.INVOKESPECIAL:
+                case Opcodes.INVOKESTATIC:
+                    targetParameterStartIndex = 0;
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown opcode " + annotatedOpcode + ": "
@@ -403,34 +423,22 @@ class BytecoderClassTranformer {
                 targetParameterTypes[i] = hasAnnotatedParameterType ?
                         annotatedParameterTypes[parameterIndex] : parameterTypes[parameterIndex];
             }
-            Type targetReturnType = annotatedReturnType != null ? annotatedReturnType : returnType;
+            Type targetReturnType = annotatedOpcode == Opcodes.INVOKESPECIAL ? Type.VOID_TYPE
+                    : annotatedReturnType != null ? annotatedReturnType : returnType;
             String targetMethodDescriptor = Type.getMethodDescriptor(targetReturnType,
                     targetParameterTypes);
 
-            boolean targetIsInterface;
-            switch (annotatedOpcode) {
-                case Opcodes.INVOKEINTERFACE:
-                    targetIsInterface = true;
-                    break;
-                case Opcodes.INVOKESTATIC:
-                case Opcodes.INVOKEVIRTUAL:
-                    targetIsInterface = false;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown opcode " + annotatedOpcode + ": "
-                            + method);
-            }
+            boolean targetIsInterface = annotatedOpcode == Opcodes.INVOKEINTERFACE;
 
             mv.visitMethodInsn(annotatedOpcode, targetClassInternalName, annotatedMethodName,
                     targetMethodDescriptor, targetIsInterface);
 
             mv.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
 
-            int maxStack = localIndex;
             if (!returnType.equals(Type.VOID_TYPE)) {
                 maxStack = Math.max(maxStack, 1);
             }
-            int maxLocals = localIndex;
+
             mv.visitMaxs(maxStack, maxLocals);
 
             mv.visitEnd();
