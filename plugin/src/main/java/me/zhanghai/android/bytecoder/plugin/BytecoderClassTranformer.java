@@ -65,6 +65,19 @@ class BytecoderClassTranformer {
 
     private static class BytecoderMethodVisitor extends MethodVisitor {
 
+        private static final String LIBRARY_CLASS_NAME_PREFIX =
+                "me.zhanghai.android.bytecoder.library.";
+        private static final Type TYPE_INVOKE_CONSTRUCTOR = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "InvokeConstructor"));
+        private static final Type TYPE_INVOKE_INTERFACE = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "InvokeInterface"));
+        private static final Type TYPE_INVOKE_STATIC = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "InvokeStatic"));
+        private static final Type TYPE_INVOKE_VIRTUAL = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "InvokeVirtual"));
+        private static final Type TYPE_TYPE_NAME = Type.getType(getDescriptor(
+                LIBRARY_CLASS_NAME_PREFIX + "TypeName"));
+
         private String method;
         private int access;
         private Type[] parameterTypes;
@@ -91,53 +104,53 @@ class BytecoderClassTranformer {
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            switch (desc) {
-                case "Lme/zhanghai/android/bytecoder/library/InvokeConstructor;":
-                    if (hasTarget()) {
-                        throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
-                                + ": " + method);
-                    }
-                    annotatedOpcode = Opcodes.INVOKESPECIAL;
-                    return new InvokeAnnotationVisitor();
-                case "Lme/zhanghai/android/bytecoder/library/InvokeInterface;":
-                    if (hasTarget()) {
-                        throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
-                                + ": " + method);
-                    }
-                    annotatedOpcode = Opcodes.INVOKEINTERFACE;
-                    return new InvokeAnnotationVisitor();
-                case "Lme/zhanghai/android/bytecoder/library/InvokeStatic;":
-                    if (hasTarget()) {
-                        throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
-                                + ": " + method);
-                    }
-                    annotatedOpcode = Opcodes.INVOKESTATIC;
-                    return new InvokeAnnotationVisitor();
-                case "Lme/zhanghai/android/bytecoder/library/InvokeVirtual;":
-                    if (hasTarget()) {
-                        throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
-                                + ": " + method);
-                    }
-                    annotatedOpcode = Opcodes.INVOKEVIRTUAL;
-                    return new InvokeAnnotationVisitor();
-                case "Lme/zhanghai/android/bytecoder/library/TypeName;":
-                    return new ReturnTypeNameAnnotationVisitor();
-                default:
-                    return super.visitAnnotation(desc, visible);
+            Type annotationType = Type.getType(desc);
+            if (annotationType.equals(TYPE_INVOKE_CONSTRUCTOR)) {
+                if (hasTarget()) {
+                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.INVOKESPECIAL;
+                return new InvokeAnnotationVisitor();
+            } else if (annotationType.equals(TYPE_INVOKE_INTERFACE)) {
+                if (hasTarget()) {
+                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.INVOKEINTERFACE;
+                return new InvokeAnnotationVisitor();
+            } else if (annotationType.equals(TYPE_INVOKE_STATIC)) {
+                if (hasTarget()) {
+                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.INVOKESTATIC;
+                return new InvokeAnnotationVisitor();
+            } else if (annotationType.equals(TYPE_INVOKE_VIRTUAL)) {
+                if (hasTarget()) {
+                    throw new IllegalArgumentException("Method has a duplicate @Invoke* " + desc
+                            + ": " + method);
+                }
+                annotatedOpcode = Opcodes.INVOKEVIRTUAL;
+                return new InvokeAnnotationVisitor();
+            } else if (annotationType.equals(TYPE_TYPE_NAME)) {
+                return new ReturnTypeNameAnnotationVisitor();
+            } else {
+                return super.visitAnnotation(desc, visible);
             }
         }
 
         @Override
         public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor,
                                                           boolean visible) {
-            switch (descriptor) {
-                case "Lme/zhanghai/android/bytecoder/library/TypeName;":
-                    if (annotatedParameterTypes == null) {
-                        annotatedParameterTypes = new Type[parameterTypes.length];
-                    }
-                    return new ParameterTypeNameAnnotationVisitor(parameter);
-                default:
-                    return super.visitParameterAnnotation(parameter, descriptor, visible);
+            Type annotationType = Type.getType(descriptor);
+            if (annotationType.equals(TYPE_TYPE_NAME)) {
+                if (annotatedParameterTypes == null) {
+                    annotatedParameterTypes = new Type[parameterTypes.length];
+                }
+                return new ParameterTypeNameAnnotationVisitor(parameter);
+            } else {
+                return super.visitParameterAnnotation(parameter, descriptor, visible);
             }
         }
 
