@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Object activityThread = ActivityThread_currentActivityThread();
-        String text = "ActivityThread.currentActivityThread(): " + activityThread.toString();
+        String text = "ActivityThread.currentActivityThread(): " + activityThread;
 
         TextView textView = new TextView(this);
         textView.setText(text);
