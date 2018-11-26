@@ -41,6 +41,7 @@ public class BytecoderTransform extends Transform {
 
     @Override
     public boolean isIncremental() {
+        // TODO: Support incremental.
         return false;
     }
 
