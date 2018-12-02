@@ -43,7 +43,7 @@ This plugin works by creating stub methods with annotations that specify the hid
 
 ### Method access
 
-`@InvokeConstructor`, `@InvokeInterface`, `@InvokeStatic` and `@InvokeVirtual` are the annotations for accessing a hidden public method. Take `@InvokeStatic` as an example:
+[`@InvokeConstructor`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/InvokeConstructor.java), [`@InvokeInterface`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/InvokeInterface.java), [`@InvokeStatic`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/InvokeStatic.java) and [`@InvokeVirtual`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/InvokeVirtual.java) are the annotations for accessing a hidden public method. Take `@InvokeStatic` as an example:
 
 ```java
 @InvokeStatic(className = "android.app.ActivityThread", methodName = "currentActivityThread")
@@ -55,11 +55,11 @@ public static Object ActivityThread_currentActivityThread() throws LinkageError 
 
 The method definition above will be transformed to be calling `android.app.ActivityThread.currentActivityThread()` in the bytecode, by replacing the method body (`return null;`) with an `invokestatic` bytecode instruction (and some others), so that callers can just call it as if calling the hidden API directly.
 
-You might have noticed the `@TypeName` annotation. This annotation solves the problem that sometimes the Android framework can mark an entire class as hidden, making the class definition unavailable at compile time. In this case, one can use the `@TypeName` annotation to tell the plugin what the actual type should be, and just use a plain `Object` in its place.
+You might have noticed the [`@TypeName`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/TypeName.java) annotation. This annotation solves the problem that sometimes the Android framework can mark an entire class as hidden, making the class definition unavailable at compile time. In this case, one can use the `@TypeName` annotation to tell the plugin what the actual type of a parameter or return value should be, and just use a plain `Object` in its place.
 
 ### Field access
 
-`@GetField`, `@GetStatic`, `@SetField` and `@SetStatic` are the annotations for accessing a hidden public field. And here is a simple example for `@GetField`.
+[`@GetField`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/GetField.java), [`@GetStatic`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/GetStatic.java), [`@PutField`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/PutField.java) and [`@PutStatic`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/PutStatic.java) are the annotations for accessing a hidden public field. And here is a simple example for `@GetField`.
 
 ```java
 @GetStatic(classConstant = AppOpsManager.class, fieldName = "OP_NONE")
@@ -67,6 +67,8 @@ public static int AppOpsManager_getOpNone() throws LinkageError {
     return null;
 }
 ```
+
+You can always check out the Javadoc for the annotation you are using. And in case something went wrong, the plugin will also try to detect the missing parts and report it in the build output.
 
 ## License
 
