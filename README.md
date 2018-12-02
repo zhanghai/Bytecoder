@@ -16,7 +16,7 @@ Compiling against a modified `android.jar` can work. But still, this requires on
 
 So I created Bytecoder.
 
-The Bytecoder plugin works on the bytecode level. It looks at your annotations on stub methods, and magically transforms them into real implementations that calls the hidden APIs. Its output is the same as if actually compiled with the hidden APIs present, but the process is much easier and faster.
+The Bytecoder plugin works on the bytecode level. It looks at your annotations on stub methods, and magically transforms them into real implementations that calls the hidden APIs. Its output is the same as if actually compiled with the hidden APIs present, but the process is much easier and faster. And in case the hidden API changed, one can easily create multiple versions of the method, and call the right one according to the current SDK version.
 
 ## Integration
 
@@ -55,6 +55,8 @@ public static Object ActivityThread_currentActivityThread() throws LinkageError 
 
 The method definition above will be transformed to be calling `android.app.ActivityThread.currentActivityThread()` in the bytecode, by replacing the method body (`return null;`) with an `invokestatic` bytecode instruction (and some others), so that callers can just call it as if calling the hidden API directly.
 
+In case of an unexpected SDK modification, a `LinkageError` will be thrown by the VM, which you can catch and handle the error. Since `LinkageError` is not a checked exception, you also have the choice of ignoring it and let the app crash directly.
+
 You might have noticed the [`@TypeName`](https://github.com/DreaminginCodeZH/Bytecoder/blob/master/library/src/main/java/me/zhanghai/android/bytecoder/library/TypeName.java) annotation. This annotation solves the problem that sometimes the Android framework can mark an entire class as hidden, making the class definition unavailable at compile time. In this case, one can use the `@TypeName` annotation to tell the plugin what the actual type of a parameter or return value should be, and just use a plain `Object` in its place.
 
 ### Field access
@@ -69,6 +71,10 @@ public static int AppOpsManager_getOpNone() throws LinkageError {
 ```
 
 You can always check out the Javadoc for the annotation you are using. And in case something went wrong, the plugin will also try to detect the missing parts and report it in the build output.
+
+## Caveats
+
+This plugin, same as compiling against a modified `android.jar`, can not be used to access a private or package access API because the standard Java access control still applies. And if the hidden API is not in the [light grey list](https://android.googlesource.com/platform/prebuilts/runtime/+/master/appcompat/hiddenapi-light-greylist.txt), it will still be [inaccessible on Android 9 or later](https://developer.android.com/about/versions/pie/restrictions-non-sdk-interfaces).
 
 ## License
 
