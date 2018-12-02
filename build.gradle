@@ -1,7 +1,16 @@
 allprojects {
 
-    group 'me.zhanghai.android.bytecoder'
-    version '1.0.0-SNAPSHOT'
+    buildscript {
+        repositories {
+            jcenter()
+        }
+        dependencies {
+            classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.+'
+        }
+    }
+
+    group GROUP
+    version VERSION
 
     repositories {
         google()

@@ -3,3 +3,5 @@ plugins {
 }
 
 sourceCompatibility = 1.8
+
+apply from: '../bintray.gradle'
